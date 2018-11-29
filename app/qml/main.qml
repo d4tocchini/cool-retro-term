@@ -21,6 +21,7 @@
 import QtQuick 2.2
 import QtQuick.Window 2.1
 import QtQuick.Controls 1.1
+import QtQuick.Controls.Styles 1.4
 import QtGraphicalEffects 1.0
 
 ApplicationWindow{
@@ -34,6 +35,12 @@ ApplicationWindow{
     onYChanged: appSettings.y = y
     onWidthChanged: appSettings.width = width
     onHeightChanged: appSettings.height = height
+
+    // style: ApplicationWindowStyle {
+    //     background: BorderImage {            
+    //         border { left: 20; top: 20; right: 20; bottom: 20 }
+    //     }
+    // }
 
     // Load saved window geometry and show the window
     Component.onCompleted: {        

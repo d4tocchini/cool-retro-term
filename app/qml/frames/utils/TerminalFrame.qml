@@ -156,6 +156,7 @@ Item{
 
                 vec3 darkColor = dotProd * reflectionColor.rgb;
                 gl_FragColor = vec4(mix(darkColor, txtColor.rgb, ambientLight), dotProd);
+                // gl_FragColor.a = 0.2;
             }
         "
 
