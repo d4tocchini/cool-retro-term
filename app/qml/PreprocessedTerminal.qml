@@ -30,9 +30,9 @@ Item{
 
     property size virtualResolution: Qt.size(kterminal.width, kterminal.height)
     property alias mainTerminal: kterminal
-    property ShaderEffectSource mainSource: kterminalSource
-    property ShaderEffectSource blurredSource: blurredSourceLoader.item
 
+    property ShaderEffectSource mainSource: kterminalSource
+    property BurnInEffect burnInEffect: burnInEffect
     property real fontWidth: 1.0
     property real screenScaling: 1.0
     property real scaleTexture: 1.0
@@ -43,14 +43,6 @@ Item{
     anchors.rightMargin: frame.displacementRight * appSettings.windowScaling
     anchors.topMargin: frame.displacementTop * appSettings.windowScaling
     anchors.bottomMargin: frame.displacementBottom * appSettings.windowScaling
-
-    //Parameters for the burnIn effect.
-    property real burnIn: appSettings.burnIn
-    property real fps: appSettings.fps !== 0 ? appSettings.fps : 60
-    property real burnInFadeTime: Utils.lint(_minBurnInFadeTime, _maxBurnInFadeTime, burnIn)
-    property real motionBlurCoefficient: 1.0 / (fps * burnInFadeTime)
-    property real _minBurnInFadeTime: 0.16
-    property real _maxBurnInFadeTime: 1.6
 
     property size terminalSize: kterminal.terminalSize
     property size fontMetrics: kterminal.fontMetrics
@@ -114,14 +106,10 @@ Item{
             }
         }
 
-        FontLoader{ id: fontLoader }
-
-        function handleFontChange(fontSource, pixelSize, lineSpacing, screenScaling, fontWidth){
-            fontLoader.source = fontSource;
-
+        function handleFontChanged(fontFamily, pixelSize, lineSpacing, screenScaling, fontWidth) {
             kterminal.antialiasText = !appSettings.lowResolutionFont;
             font.pixelSize = pixelSize;
-            font.family = fontLoader.name;
+            font.family = fontFamily;
 
             terminalContainer.fontWidth = fontWidth;
             terminalContainer.screenScaling = screenScaling;
@@ -129,6 +117,7 @@ Item{
 
             kterminal.lineSpacing = lineSpacing;
         }
+
         function startSession() {
             appSettings.initializedSettings.disconnect(startSession);
 
@@ -152,7 +141,7 @@ Item{
             forceActiveFocus();
         }
         Component.onCompleted: {
-            appSettings.terminalFontChanged.connect(handleFontChange);
+            appSettings.terminalFontChanged.connect(handleFontChanged);
             appSettings.initializedSettings.connect(startSession);
         }
     }
@@ -160,13 +149,12 @@ Item{
         id: linuxContextMenu
         Menu{
             id: contextmenu
-            MenuItem{action: copyAction}
-            MenuItem{action: pasteAction}
-            MenuSeparator{}
-            MenuItem{action: fullscreenAction}
-            MenuItem{action: showMenubarAction}
-            MenuSeparator{visible: !appSettings.showMenubar}
-            CRTMainMenuBar{visible: !appSettings.showMenubar}
+            MenuItem { action: copyAction }
+            MenuItem { action: pasteAction }
+            MenuSeparator { visible: !appSettings.showMenubar }
+            MenuItem { action: showsettingsAction ; visible: !appSettings.showMenubar}
+            MenuSeparator { visible: !appSettings.showMenubar }
+            CRTMainMenuBar { visible: !appSettings.showMenubar }
         }
     }
     Component {
@@ -221,7 +209,7 @@ Item{
             y = y / height;
 
             var cc = Qt.size(0.5 - x, 0.5 - y);
-            var distortion = (cc.height * cc.height + cc.width * cc.width) * appSettings.screenCurvature;
+            var distortion = (cc.height * cc.height + cc.width * cc.width) * appSettings.screenCurvature * appSettings.screenCurvatureSize;
 
             return Qt.point((x - cc.width  * (1+distortion) * distortion) * kterminal.width,
                            (y - cc.height * (1+distortion) * distortion) * kterminal.height)
@@ -235,117 +223,8 @@ Item{
         visible: false
         textureSize: Qt.size(kterminal.width * scaleTexture, kterminal.height * scaleTexture);
     }
-    Loader{
-        id: blurredSourceLoader
-        asynchronous: true
-        active: burnIn !== 0
 
-        sourceComponent: ShaderEffectSource{
-            property bool updateBurnIn: false
-
-            id: _blurredSourceEffect
-            sourceItem: blurredTerminalLoader.item
-            recursive: true
-            live: false
-            hideSource: true
-            wrapMode: kterminalSource.wrapMode
-
-            visible: false
-
-            function restartBlurSource(){
-                livetimer.restart();
-            }
-
-            // This updates the burnin synched with the timer.
-            Connections {
-                target: updateBurnIn ? mainShader : null
-                ignoreUnknownSignals: false
-                onTimeChanged: _blurredSourceEffect.scheduleUpdate();
-            }
-
-            Timer{
-                id: livetimer
-
-                // The interval assumes 60 fps. This is the time needed burnout a white pixel.
-                // We multiply 1.1 to have a little bit of margin over the theoretical value.
-                // This solution is not extremely clean, but it's probably the best to avoid measuring fps.
-
-                interval: burnInFadeTime * 1000 * 1.1
-                running: true
-                onTriggered: _blurredSourceEffect.updateBurnIn = false;
-            }
-            Connections{
-                target: kterminal
-                onImagePainted:{
-                    _blurredSourceEffect.scheduleUpdate();
-                    _blurredSourceEffect.updateBurnIn = true;
-                    livetimer.restart();
-                }
-            }
-            // Restart blurred source settings change.
-            Connections{
-                target: appSettings
-                onBurnInChanged: _blurredSourceEffect.restartBlurSource();
-                onTerminalFontChanged: _blurredSourceEffect.restartBlurSource();
-                onRasterizationChanged: _blurredSourceEffect.restartBlurSource();
-                onBurnInQualityChanged: _blurredSourceEffect.restartBlurSource();
-            }
-            Connections {
-                target: kterminalScrollbar
-                onOpacityChanged: _blurredSourceEffect.restartBlurSource();
-            }
-        }
-    }
-
-    Loader{
-        id: blurredTerminalLoader
-
-        property int burnInScaling: scaleTexture * appSettings.burnInQuality
-
-        width: appSettings.lowResolutionFont
-                  ? kterminal.width * Math.max(1, burnInScaling)
-                  : kterminal.width * scaleTexture * appSettings.burnInQuality
-        height: appSettings.lowResolutionFont
-                    ? kterminal.height * Math.max(1, burnInScaling)
-                    : kterminal.height * scaleTexture * appSettings.burnInQuality
-
-        active: burnIn !== 0
-        asynchronous: true
-
-        sourceComponent: ShaderEffect {
-            property variant txt_source: kterminalSource
-            property variant blurredSource: blurredSourceLoader.item
-            property real blurCoefficient: motionBlurCoefficient
-
-            blending: false
-
-            fragmentShader:
-                "#ifdef GL_ES
-                    precision mediump float;
-                #endif\n" +
-
-                "uniform lowp float qt_Opacity;" +
-                "uniform lowp sampler2D txt_source;" +
-
-                "varying highp vec2 qt_TexCoord0;
-
-                 uniform lowp sampler2D blurredSource;
-                 uniform highp float blurCoefficient;" +
-
-                "float rgb2grey(vec3 v){
-                    return dot(v, vec3(0.21, 0.72, 0.04));
-                }" +
-
-                "void main() {" +
-                    "vec2 coords = qt_TexCoord0;" +
-                    "vec3 origColor = texture2D(txt_source, coords).rgb;" +
-                    "vec3 blur_color = texture2D(blurredSource, coords).rgb - vec3(blurCoefficient);" +
-                    "vec3 color = min(origColor + blur_color, max(origColor, blur_color));" +
-
-                    "gl_FragColor = vec4(color, rgb2grey(color - origColor));" +
-                "}"
-
-            onStatusChanged: if (log) console.log(log) //Print warning messages
-        }
+    BurnInEffect {
+        id: burnInEffect
     }
 }
