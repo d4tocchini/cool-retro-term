@@ -18,14 +18,17 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-import QtQuick 2.2
-import QtQuick.Window 2.1
-import QtQuick.Controls 1.1
+import QtQuick 2.11
+import QtQuick.Window 2.11
+import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import QtGraphicalEffects 1.0
 
 ApplicationWindow{
     id: terminalWindow
+
+    // flags: Qt.FramelessWindowHint
+    color: "#00000000"
 
     width: 1024
     height: 768
@@ -37,7 +40,7 @@ ApplicationWindow{
     onHeightChanged: appSettings.height = height
 
     // style: ApplicationWindowStyle {
-    //     background: BorderImage {            
+    //     background: BorderImage {
     //         border { left: 20; top: 20; right: 20; bottom: 20 }
     //     }
     // }
@@ -71,14 +74,13 @@ ApplicationWindow{
 
     property string wintitle: appSettings.wintitle
 
-    color: "#00000000"
     title: terminalContainer.title || qsTr(appSettings.wintitle)
 
     Action {
         id: showMenubarAction
         text: qsTr("Show Menubar")
         enabled: Qt.platform.os !== "osx"
-        shortcut: "Ctrl+Shift+M"
+        shortcut: "Alt+M"
         checkable: true
         checked: appSettings.showMenubar
         onTriggered: appSettings.showMenubar = !appSettings.showMenubar
@@ -87,7 +89,7 @@ ApplicationWindow{
         id: fullscreenAction
         text: qsTr("Fullscreen")
         enabled: Qt.platform.os !== "osx"
-        shortcut: "Alt+F11"
+        shortcut: StandardKey.FullScreen
         onTriggered: appSettings.fullscreen = !appSettings.fullscreen;
         checkable: true
         checked: appSettings.fullscreen
@@ -95,12 +97,13 @@ ApplicationWindow{
     Action {
         id: quitAction
         text: qsTr("Quit")
-        shortcut: "Ctrl+Shift+Q"
+        shortcut: StandardKey.Quit
         onTriggered: Qt.quit();
     }
     Action{
         id: showsettingsAction
         text: qsTr("Settings")
+        shortcut: StandardKey.Preferences
         onTriggered: {
             settingswindow.show();
             settingswindow.requestActivate();
@@ -110,28 +113,29 @@ ApplicationWindow{
     Action{
         id: copyAction
         text: qsTr("Copy")
-        shortcut: "Ctrl+Shift+C"
+        shortcut: StandardKey.Copy
     }
     Action{
         id: pasteAction
         text: qsTr("Paste")
-        shortcut: "Ctrl+Shift+V"
+        shortcut: StandardKey.Paste
     }
     Action{
         id: zoomIn
         text: qsTr("Zoom In")
-        shortcut: "Ctrl++"
+        shortcut: StandardKey.ZoomIn
         onTriggered: appSettings.incrementScaling();
     }
     Action{
         id: zoomOut
         text: qsTr("Zoom Out")
-        shortcut: "Ctrl+-"
+        shortcut: StandardKey.ZoomOut
         onTriggered: appSettings.decrementScaling();
     }
     Action{
         id: showAboutAction
         text: qsTr("About")
+        shortcut: StandardKey.HelpContents
         onTriggered: {
             aboutDialog.show();
             aboutDialog.requestActivate();

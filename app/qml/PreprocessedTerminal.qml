@@ -18,7 +18,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-import QtQuick 2.2
+import QtQuick 2.11
 import QtQuick.Controls 1.1
 
 import QMLTermWidget 1.0
@@ -71,11 +71,35 @@ Item{
     function updateSources() {
         kterminal.update();
     }
-
-    QMLTermWidget {
+    Item {
+        id: termitem
+        width: Math.floor(parent.width / (screenScaling * fontWidth))
+        height: Math.floor(parent.height / screenScaling)
+        QMLTermWidget {
         id: kterminal
         width: Math.floor(parent.width / (screenScaling * fontWidth))
         height: Math.floor(parent.height / screenScaling)
+
+        Text {
+            id: textss
+            wrapMode: Text.Wrap
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Hello World!"
+            font.family: "Helvetica"
+            font.pointSize: 24
+            color: "red"
+            // SequentialAnimation on font.letterSpacing {
+            //     loops: Animation.Infinite;
+            //     NumberAnimation { from: 0; to: 50; easing.type: Easing.InQuad; duration: 3000 }
+            //     ScriptAction {
+            //         script: {
+            //             container.y = (screen.height / 4) + (Math.random() * screen.height / 2)
+            //             container.x = (screen.width / 4) + (Math.random() * screen.width / 2)
+            //         }
+            //     }
+            // }
+        }
 
         colorScheme: "cool-retro-term"
 
@@ -85,7 +109,6 @@ Item{
 
         session: QMLTermSession {
             id: ksession
-
             onFinished: {
                 Qt.quit()
             }
@@ -120,7 +143,6 @@ Item{
 
         function startSession() {
             appSettings.initializedSettings.disconnect(startSession);
-
             // Retrieve the variable set in main.cpp if arguments are passed.
             if (defaultCmd) {
                 ksession.setShellProgram(defaultCmd);
@@ -133,7 +155,6 @@ Item{
                 // OSX Requires the following default parameters for auto login.
                 ksession.setArgs(["-i", "-l"]);
             }
-
             if (workdir)
                 ksession.initialWorkingDirectory = workdir;
 
@@ -144,6 +165,7 @@ Item{
             appSettings.terminalFontChanged.connect(handleFontChanged);
             appSettings.initializedSettings.connect(startSession);
         }
+    }
     }
     Component {
         id: linuxContextMenu
@@ -217,7 +239,7 @@ Item{
     }
     ShaderEffectSource{
         id: kterminalSource
-        sourceItem: kterminal
+        sourceItem: termitem
         hideSource: true
         wrapMode: ShaderEffectSource.ClampToEdge
         visible: false

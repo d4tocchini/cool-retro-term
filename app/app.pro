@@ -5,13 +5,19 @@ DESTDIR = $$OUT_PWD/../
 
 HEADERS += \
     fileio.h \
-    monospacefontmanager.h
+    monospacefontmanager.h \
+    mac_manager.h
 
 SOURCES = main.cpp \
     fileio.cpp \
-    monospacefontmanager.cpp
+    monospacefontmanager.cpp \
+    mac_manager.mm
 
 macx:ICON = icons/crt.icns
+macx:LIBS += -framework Foundation -framework Cocoa
+macx:INCLUDEPATH += /System/Library/Frameworks/Foundation.framework/Versions/C/Headers \
+/System/Library/Frameworks/AppKit.framework/Headers \
+/System/Library/Frameworks/Cocoa.framework/Headers
 
 RESOURCES += qml/resources.qrc
 

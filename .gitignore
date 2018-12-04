@@ -1,4 +1,12 @@
-# C++ objects and libs
+node_modules/
+yarn.lock
+
+]][]-][p0]\[-]=]=[-=\]=[-p0[]\#
+
+'
+"[[/?
+[=-\
+# .;'p[-p[l;,./ C++ objects and libs
 
 *.slo
 *.lo
@@ -18,6 +26,7 @@
 *.pro.user.*
 *.moc
 moc_*.cpp
+moc_*.h
 qrc_*.cpp
 ui_*.h
 Makefile*

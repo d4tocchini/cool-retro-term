@@ -18,9 +18,9 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-import QtQuick 2.2
+import QtQuick 2.11
 import QtQuick.Controls 1.1
-import QtQuick.Window 2.1
+import QtQuick.Window 2.11
 import QtQuick.Layouts 1.1
 import QtQuick.Dialogs 1.1
 
@@ -29,6 +29,7 @@ Window {
     title: qsTr("Settings")
     width: 580
     height: 400
+    color: "transparent"
 
     property int tabmargins: 15
 

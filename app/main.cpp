@@ -15,6 +15,8 @@
 #include <fileio.h>
 #include <monospacefontmanager.h>
 
+#include "mac_manager.h"
+
 QString getNamedArgument(QStringList args, QString name, QString defaultName)
 {
     int index = args.indexOf(name);
@@ -39,13 +41,17 @@ int main(int argc, char *argv[])
 #endif
 
     QApplication app(argc, argv);
+
     // set application attributes
+
     // Has no effects, see https://bugreports.qt.io/browse/QTBUG-51293
     // app.setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
+
 
     QQmlApplicationEngine engine;
     FileIO fileIO;
     MonospaceFontManager monospaceFontManager;
+
 
 #if !defined(Q_OS_MAC)
     app.setWindowIcon(QIcon::fromTheme("cool-retro-term", QIcon(":../icons/32x32/cool-retro-term.png")));
@@ -58,15 +64,16 @@ int main(int argc, char *argv[])
     if (args.contains("-h") || args.contains("--help")) {
         // BUG: This usage help text goes to stderr, should go to stdout.
         // BUG: First line of output is surrounded by double quotes.
-        qDebug() << "Usage: " + args.at(0) + " [--default-settings] [--workdir <dir>] [--program <prog>] [-p|--profile <prof>] [--fullscreen] [-h|--help]";
+        qDebug() << "Usage: " + args.at(0) + " [--default-settings] [--dir <dir>] [-p|--profile <prof>] [--fullscreen] [-h|--help] [--exec <cmd>]";
         qDebug() << "  --default-settings  Run cool-retro-term with the default settings";
-        qDebug() << "  --workdir <dir>     Change working directory to 'dir'";
-        qDebug() << "  -e <cmd>            Command to execute. This option will catch all following arguments, so use it as the last option.";
+        qDebug() << "  --dir <dir>         Change working directory to 'dir'";
+        qDebug() << "  --exec <cmd>        Command to execute. This option will catch all following arguments, so use it as the last option.";
         qDebug() << "  -T <title>          Set window title to 'title'.";
         qDebug() << "  --fullscreen        Run cool-retro-term in fullscreen.";
         qDebug() << "  -p|--profile <prof> Run cool-retro-term with the given profile.";
         qDebug() << "  -h|--help           Print this help.";
         qDebug() << "  --verbose           Print additional information such as profiles and settings.";
+        qDebug() << "source " + QCoreApplication::applicationDirPath() + "/exec.sh";
         return 0;
     }
 
@@ -77,15 +84,28 @@ int main(int argc, char *argv[])
 
     // Manage default command
     QStringList cmdList;
-    if (args.contains("-e")) {
-        cmdList << args.mid(args.indexOf("-e") + 1);
+    if (args.contains("--exec")) {
+        cmdList << args.mid(args.indexOf("--exec") + 1);
     }
+
+
     QVariant command(cmdList.empty() ? QVariant() : cmdList[0]);
     QVariant commandArgs(cmdList.size() <= 1 ? QVariant() : QVariant(cmdList.mid(1)));
     engine.rootContext()->setContextProperty("defaultCmd", command);
     engine.rootContext()->setContextProperty("defaultCmdArgs", commandArgs);
+    // if (cmdList.empty()) {
+    //     engine.rootContext()->setContextProperty("defaultCmd", QString(". " + QCoreApplication::applicationDirPath() + "/exec.sh"));
+    //     engine.rootContext()->setContextProperty("defaultCmdArgs", QVariant());
+    // }
+    // else {
+    //     QVariant command(cmdList[0]);
+    //     QVariant commandArgs(cmdList.size() <= 1 ? QVariant() : QVariant(cmdList.mid(1)));
+    //     engine.rootContext()->setContextProperty("defaultCmd", command);
+    //     engine.rootContext()->setContextProperty("defaultCmdArgs", commandArgs);
+    // }
 
-    engine.rootContext()->setContextProperty("workdir", getNamedArgument(args, "--workdir", "$HOME"));
+
+    engine.rootContext()->setContextProperty("workdir", getNamedArgument(args, "--dir", "$HOME"));
     engine.rootContext()->setContextProperty("fileIO", &fileIO);
     engine.rootContext()->setContextProperty("monospaceSystemFonts", monospaceFontManager.retrieveMonospaceFonts());
 
@@ -107,6 +127,10 @@ int main(int argc, char *argv[])
 
     // Quit the application when the engine closes.
     QObject::connect((QObject*) &engine, SIGNAL(quit()), (QObject*) &app, SLOT(quit()));
+    
+#if defined(Q_OS_MAC)
+    MacManager::removeTitlebarFromWindow();
+#endif
 
     return app.exec();
 }
