@@ -39,11 +39,6 @@ Item{
     property alias title: ksession.title
     property alias kterminal: kterminal
 
-    anchors.leftMargin: frame.displacementLeft * appSettings.windowScaling
-    anchors.rightMargin: frame.displacementRight * appSettings.windowScaling
-    anchors.topMargin: frame.displacementTop * appSettings.windowScaling
-    anchors.bottomMargin: frame.displacementBottom * appSettings.windowScaling
-
     property size terminalSize: kterminal.terminalSize
     property size fontMetrics: kterminal.fontMetrics
 
@@ -241,7 +236,7 @@ Item{
         id: kterminalSource
         sourceItem: termitem
         hideSource: true
-        wrapMode: ShaderEffectSource.ClampToEdge
+        wrapMode: ShaderEffectSource.Repeat
         visible: false
         textureSize: Qt.size(kterminal.width * scaleTexture, kterminal.height * scaleTexture);
     }
